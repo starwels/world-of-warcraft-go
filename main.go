@@ -1,41 +1,66 @@
 package main
 
 import (
-	"net/http"
+	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"flag"
+	"net/http"
 	"strings"
 )
+
+// Npc struct
+type Npc struct {
+	ID                int
+	Name              string
+	URLSlug           string
+	CreatureDisplayID int
+}
+
+// Boss struct
+type Boss struct {
+	ID                    int
+	Name                  string
+	URLSlug               string
+	Description           string
+	ZondeID               int
+	AvailableInNormalMode bool
+	AvailableInHeroicMode bool
+	Health                int
+	Level                 int
+	HeroicLevel           int
+	JournalID             int
+	Npcs                  []Npc
+}
 
 const locale string = "locale=en_US"
 const url string = "https://us.api.battle.net/wow/boss/"
 
 func main() {
-
+	b := Boss{}
 	apikey, err := ioutil.ReadFile("apikey.txt")
 	if err != nil {
 		panic(err)
 	}
 
-	bossId := flag.String("boss", "10184", "boss id")
-	
+	bossID := flag.String("boss", "24723", "boss id")
+
 	flag.Parse()
 
 	key := strings.TrimSpace(string(apikey))
 
-	resp, err := http.Get(url + *bossId + "?" + locale + "&" + key)
+	fullURL := url + *bossID + "?" + locale + "&" + key
+
+	resp, err := http.Get(fullURL)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	data, err := ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
+	json.NewDecoder(resp.Body).Decode(&b)
 
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("%s\n", data)
+	defer resp.Body.Close()
+	fmt.Println(b.Name)
+	fmt.Println(b.Description)
 }
